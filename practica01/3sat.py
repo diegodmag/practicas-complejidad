@@ -79,7 +79,7 @@ class ExpresionFNC:
         self.__clausulas = clausulas
 
     def __str__(self): 
-        string = ""
+        string = "Expresion : "+self.nombre+" = \n"
         for c in self.clausulas: 
             string += str(c) + "\n"
 
@@ -145,7 +145,7 @@ def constructor_de_ejemplar(U):
             cont+=1
 
             
-    return ExpresionFNC("E", clausulas)
+    return ExpresionFNC("E"+str(rnd.randint(0,100)), clausulas)
 
 
 ###FASE VERIFICADORA 
@@ -153,18 +153,24 @@ def constructor_de_ejemplar(U):
 El algoritmo que verifica en tiempo polinomial si la solucion es candidata o no 
 Cabe resaltar que la construccion y fase adivinadora ocurren en el metodo constructor_de_ejemplar
 Para determinar si se satisface o no se utiliza el metodo "se_satisface" de la clase EjemplarFNC
+param : U -> Lista de variables 
 """
-def algo_3_SAT()
+def algo_3_SAT(U): 
 
-def prueba(): 
+    #El algoritmo solo imprime pero facilmente podria regresar un booleano 
+    
+    E = E = constructor_de_ejemplar(U)
+    print(E)
+    print("La expresion se satisface ? :"+ str(E.se_satisface()))
+  
+
+def ejecucion(): 
 
     U = [Variable('A',True),Variable('B',True),Variable('C',True),Variable('D',True),Variable('E',True),Variable('F',True),Variable('G',True),Variable('H',True),Variable('I',True),Variable('J',True)]
-    E = constructor_de_ejemplar(U)
-    print(E)
-    print(E.se_satisface())
+    algo_3_SAT(U)
 
 if __name__ == '__main__': 
-    prueba()
+    ejecucion()
 
 
 
