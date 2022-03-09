@@ -68,21 +68,8 @@ def algo_alcanzabilidad(G,s,t):
     if s not in G.vertices or t not in G.vertices: 
         print("AQUI ENTRO")
         return False
-
-    #Agregamos los vertices distinguidos s y t en caso de que no hayan sido agregados en la dase adivinadora     
   
-    '''
-    
-    for v in S: 
-        flag = False 
-        for u in S: 
-            if v!=u: 
-                if {u,v} in G.aristas:
-                    flag = True
-        ##Si un vertice de S no es adyacente a cualquier otro de S, entonces no hay camino 
-        if flag == True:
-            return False
-    '''
+
     #Generamos una subgrafica con el subconjunto de vertices S obtenido
     E_s = []
     for s in S: 
@@ -94,6 +81,7 @@ def algo_alcanzabilidad(G,s,t):
 
 
     temp = Grafica(S,E_s)
+    ##Corremos dfs 
     path = dfs(temp,s,set())
 
     #path = dfs(G,s,set())
@@ -109,8 +97,9 @@ def algo_alcanzabilidad(G,s,t):
     return False    
 
 
-#visitados = set()
-
+'''
+Implementacion recursiva de DFS 
+'''
 def dfs(G,s,visitados): 
     
     if s not in visitados:
