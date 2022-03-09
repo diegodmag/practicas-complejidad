@@ -1,4 +1,3 @@
-###Clase variable 
 import random as rnd 
 
 '''
