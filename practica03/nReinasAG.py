@@ -1,6 +1,8 @@
 import random as rnd 
 import numpy as np
 import math
+import copy 
+
 
 
 '''
@@ -10,9 +12,6 @@ de una representacion genetica, es decir una tupla
 
 #Conideremos que cada solucion tiene un cromosoma el cual va a ser afectado por la mutacion 
 
-from sympy import false, re, true
-
-
 class Solucion: 
 
     def __init__(self, num_reinas):
@@ -20,7 +19,7 @@ class Solucion:
         #El cromosoma es la tupla que representa la posicion de las reinas 
         #Por lo que un gen es una posicion en especifico 
         self.__cromosoma = [-1]*num_reinas
-        self.__rep_tablero = [ [-1 for i in range(num_reinas) ] for j in range(num_reinas)] 
+        self.__rep_tablero = [ ["-" for i in range(num_reinas) ] for j in range(num_reinas)] 
 
     def __str__(self): 
         return "Cromosoma :"+str(self.__cromosoma)+"\n"+"Tablero :"+str(self.__rep_tablero)
@@ -52,6 +51,13 @@ class Solucion:
     #FALRA IMPLEMENTAR IMPORTANTE  
     def generar_tablero(self):
 
+        # El indice del arreglo es la columna 
+        # El valor es el renglon 
+
+        for i in range(len(self.cromosoma)):
+            self.rep_tablero[i][self.cromosoma[i]] = "R"
+
+
         tablero = ""
 
         for fila in self.__rep_tablero:
@@ -65,14 +71,14 @@ class Solucion:
         #Debo de generar una distribucion aleatoria de los numeros de 0 a num_reinas 
         #Cuando se genera un numero se revisa que no este en la lista 
         for i in range(len(self.__cromosoma)): 
-            flag = true
+            flag = True
             while flag: 
                 new_gen = rnd.randint(0,self.__num_reinas-1)
                 if new_gen in self.__cromosoma:
                     continue
                 else :
                    self.__cromosoma[i] = new_gen
-                   flag = false
+                   flag = False
 
        
 '''
@@ -85,8 +91,10 @@ class AG:
         self.__num_ind = num_ind
         self.__max_gen = max_gen
         self.__porc_new_ind = porc_new_ind
+        self.__num_new_ind = (int)(self.__num_ind*self.__porc_new_ind)
         self.__porc_mut = porc_mut
         self.__actual_pop = self.get_initial_pop()
+        self.__objetive_fitness = 0.0 
 
     '''
     Genera una poblacion de soluciones con cromosomas 
@@ -108,34 +116,43 @@ class AG:
         conflictos : Numero de conflictos encontrados (Una solucion optima tiene 0 conflictos )
     '''
     def fun_fitness(self, sol): 
-        conflictos = 0 
-        for gen in sol.cromosoma:
-            for gen_2 in sol.cromosoma:
-                if gen != gen_2 : 
-                    diff_filas = abs(gen - gen_2)
-                    diff_colums = abs(sol.cromosoma.index(gen)-sol.cromosoma.index(gen_2))
-                    if diff_filas == diff_colums:
-                        conflictos = conflictos + 1
-        
-        return conflictos
+        conflictos = 0
+
+        for i in range(len(sol.cromosoma)):
+            for j in range(len(sol.cromosoma)): 
+                if(i != j):
+                    dx = abs(i-j)
+                    dy = abs(sol.cromosoma[i]-sol.cromosoma[j])
+                    if(dx ==  dy): 
+                        conflictos+=1 
+
+        return (self.__num_reinas*(self.__num_reinas-1))/2 - conflictos
+
+
+    def two_random_matching(self,population):
+        temp = copy.deepcopy(population)
+        temp = temp.tolist() 
+        matching = []
+        while temp != []: 
+            #Se escogen dos elementos de forma al azar 
+            pair = rnd.sample(temp,2)
+            matching.append(pair)
+            temp.remove(pair[0])
+            temp.remove(pair[1]) 
+
+        return matching
     '''
     Seleccion por torneo, se consideran dos soluciones de forma aleatoria y 
-    se selecciona la solucion con el menor valor de valor de fitness  
+    se selecciona la solucion con el menor valor de valor de fitness, 
     Args : 
         population : poblacion de la cual se hara el torneo 
     Returns : 
         winnners : Un arreglo con los mejores candidatos dado un emparejamiento aleatorio
+    Note : Es necesario que la poblacion sea divisible entre dos 
     '''
     def selection_by_tournament(self, population):
 
-        temp = population 
-        tournament = []
-        while temp != []: 
-            #Se escogen dos elementos de forma al azar 
-            pair = rnd.sample(temp,2)
-            tournament.append(pair)
-            temp.remove(pair[0])
-            temp.remove(pair[1])
+        tournament = self.two_random_matching(population)
 
         winners = []
         for pair in tournament: 
@@ -168,19 +185,13 @@ class AG:
 
         total_fitness = 0 
         select_prob = []
-        temp_fitness = 0
+       
 
         for sol in population: 
             total_fitness += self.fun_fitness(sol)
 
-        for sol in population: 
-            temp_fitness += abs(total_fitness-self.fun_fitness(sol)) 
-
-
         for sol in population:
-            #La probabilidad es 1 - fitness/total_fitness por que mientras menor sea 
-            #el valor de fitness, mejor candidata es la solucion 
-            select_prob.append((abs(total_fitness-self.fun_fitness(sol)) / temp_fitness)) 
+            select_prob.append(self.fun_fitness(sol)/total_fitness) 
 
         return select_prob
 
@@ -192,14 +203,25 @@ class AG:
         winners : Un arreglo con los mejores candidatos dadas las probabilidades de ser escogidos  
     '''
     def selection_by_roulette(self, population): 
-        
+        #num_parents_selected = (int)(self.__num_ind*self.__porc_new_ind)
+        num_winners = self.__num_new_ind
+        #Se toma un numero par de individuos para hacer el crossover 
+        if num_winners%2 != 0: 
+            num_winners = num_winners+1
+            self.__num_new_ind = num_winners
         probabilities = self.select_probability(population)
-        winners = np.random.choice(population,2,replace=False,p=probabilities)
+        winners = np.random.choice(population,num_winners,replace=False,p=probabilities)
         return winners
 
 
     '''
     Implementacion de la operacion crossover entre dos cromosomas que parte aproximadamente a la mitad
+    Args : 
+        sol_1 : Primer padre 
+        sol_2 : Segundo padre 
+    Returns : 
+        child_1 : Primer hijo generado pro crossover en 2 puntos
+        child_2 : Segunddo hijo generado pro crossover en 2 puntos 
     '''
     def crossover_2_points(self, sol_1, sol_2): 
         c = math.floor(self.__num_reinas/2)
@@ -212,10 +234,128 @@ class AG:
 
         return child_1, child_2
     
+    '''
+    Metodo que dada una poblacion, realiza el crossover a esa poblacion regresando los hijos 
+    Args: 
+    
+    Returns:
+    '''
+    def crossover_all_population(self, population): 
+        
+        two_matching = self.two_random_matching(population)
+        children = []
+        for pair in two_matching:
+            ch_1, ch_2 = self.crossover_2_points(pair[0],pair[1])
+            children.append(ch_1)
+            children.append(ch_2)
+
+        return children
+
+
+    '''
+    Metodo que regresa los primeros NUMERO_INIDIVIDUOS - NUEVOS_INDIVIDUOS que tienen
+    mejor valor de fitness, este metodo es la representacion de elegir inidividuos de 
+    forma elitista 
+    Args: 
+        population : poblacion a la que se aplica 
+    Returns: 
+        Mejores best_amount individuos con valor fitness 
+    Nota : La lista se regresa en desorden para mantener el factor al azar  
+    '''
+    def get_first_best(self,population): 
+        best_amount = self.__num_ind - self.__num_new_ind
+        best_sols = []
+        temp_po= sorted(population, key = self.fun_fitness, reverse=True) 
+        for i in range(best_amount):
+            best_sols.append(temp_po[i])
+
+        best_sols = rnd.sample(best_sols, len(best_sols))
+        return best_sols
+        #return rnd.shuffle(best_sols)
+
+    #Se escogen padres 
+    #Esto se puede hacer por medio del torneo y la ruleta 
+    #Despues, se generan los hijos usando los seleccionados 
+    #Luego se suma a los hijos con los mejores de la anterior generacion 
+
+    '''
+    Metodo que recibe una solucion y la muta 
+    Args : 
+        sol : Una solucion(individuo) que sera mutada 
+    Return : 
+        mutate_ind
+    '''
+    def mutate_individual(self,sol):
+        #Probabilidad de que mute cada gen : 
+        prob = 1/len(sol.cromosoma)
+        
+        for i in range(len(sol.cromosoma)): 
+            #Condicion para mutar 
+            if (rnd.random() < prob):
+                new_gen = rnd.randint(0,len(sol.cromosoma)-1)
+                sol.set_gen(i, new_gen)
+
+        
+      
+    '''
+    Se recibe una poblacion para mutar 
+    Args:
+        population : Poblacion a mutar 
+    Returns: 
+        mutate_pop : Poblacion mutada 
+    '''
+    def mutate_population(self,population): 
+        
+        num_mutate_population = (int)(self.__num_ind * self.__porc_mut)
+        population = np.random.choice(population,num_mutate_population,replace=False)
+
+        for sol in population: 
+            self.mutate_individual(sol)
+        
+
+    def new_generation(self): 
+        
+        #Se seleccionan los padres 
+        #Primero se seleccionan por ruleta : 
+        selected_by_roulette = self.selection_by_roulette(self.__actual_pop)
+        #Segundo se seleccionan por elitismo : 
+        selected_by_elitism = self.get_first_best(self.__actual_pop)
+
+        #Se obtienen los hijos de los padres seleccionados por ruleta 
+        children_by_roulette = self.crossover_all_population(selected_by_roulette)
+        #Se se mutan los hijos 
+        self.mutate_population(children_by_roulette) 
+        #Se actualiza la poblacion actual 
+        self.__actual_pop = selected_by_elitism+children_by_roulette
+
+    def get_best_ind(self): 
+        #print(sorted(self.__actual_pop, key = self.fun_fitness))
+        #print(type(self.__actual_pop))
+        return sorted(self.__actual_pop, key = self.fun_fitness)[0]
+
+
+    def AG_execution(self):
+        i = 0 
+        while(i < self.__max_gen):
+            self.new_generation()
+            i += 1
+
+        print(str(self.fun_fitness(self.get_best_ind())))
+        print(str(self.get_best_ind().generar_tablero()))
+        
+
+    #ELIMINAR 
+
     
 
 
-    #ELIMINAR 
+
+    def elitismo(self):
+        pop = self.__actual_pop 
+        self.mostrar_global_fitness(pop)
+        print("####################")
+        self.mostrar_global_fitness(self.get_first_best(pop))
+
 
     def mostrar_global_fitness(self, pop): 
         for sol in pop: 
@@ -261,6 +401,14 @@ class AG:
             print(x.cromosoma)
 
 
+'''
+Funcion auxiliar para regresar el porcentaje de un numero 
+'''
+def percentage(part, whole):
+  percentage = 100 * float(part)/float(whole)
+  return percentage
+
+
 def ejecucion(): 
 
     #sol_1 = Solucion(8)
@@ -269,10 +417,18 @@ def ejecucion():
     #sol_1.genes_randomization()
     #print(sol_1)
     #print(sol_1.generar_tablero())
-    genetic = AG(8,10,250,0.96,.15)
+    #def __init__(self, num_reinas, num_ind, max_gen, porc_new_ind, porc_mut):
+    genetic = AG(10,50,250,0.70,0.1)
+    genetic.AG_execution()
+    #so_1 = Solucion(10)
+    #so_1.set_cromosoma([4,0,7,9,6,3,1,8,5,2])
+    #print(str(so_1.generar_tablero()))
+    #print(genetic.fun_fitness(so_1))
+    #genetic.elitismo()
     #genetic.mostrar_sols()
     #genetic.selection_tournament()
-    genetic.mostrar_ruleta()
+    #genetic.mostrar_ruleta()
+    #print(percentage(5,50))
     #genetic.mostrar_torneo()
     #genetic.mostrar_fitness()
 
