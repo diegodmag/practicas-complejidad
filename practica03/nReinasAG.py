@@ -96,6 +96,9 @@ class AG:
         self.__actual_pop = self.get_initial_pop()
         self.__objetive_fitness = 0.0 
 
+    def __str__(self):
+        info = "Numero de reinas :"+str(self.__num_reinas)+'\n'+"Numero de individuos por generacion :"+str(self.__num_ind)+'\n'+"Porcentaje nuevos individuos :"+str(self.__porc_new_ind)+'\n'+"Porcentaje mutacion :"+str(self.__porc_mut)+'\n'+"Maximo numero de generaciones :"+str(self.__max_gen)
+        return info
     '''
     Genera una poblacion de soluciones con cromosomas 
     generados de manera aleatoria  
@@ -271,12 +274,8 @@ class AG:
 
         best_sols = rnd.sample(best_sols, len(best_sols))
         return best_sols
-        #return rnd.shuffle(best_sols)
+   
 
-    #Se escogen padres 
-    #Esto se puede hacer por medio del torneo y la ruleta 
-    #Despues, se generan los hijos usando los seleccionados 
-    #Luego se suma a los hijos con los mejores de la anterior generacion 
 
     '''
     Metodo que recibe una solucion y la muta 
@@ -329,8 +328,6 @@ class AG:
         self.__actual_pop = selected_by_elitism+children_by_roulette
 
     def get_best_ind(self): 
-        #print(sorted(self.__actual_pop, key = self.fun_fitness))
-        #print(type(self.__actual_pop))
         return sorted(self.__actual_pop, key = self.fun_fitness)[0]
 
 
@@ -340,97 +337,29 @@ class AG:
             self.new_generation()
             i += 1
 
-        print(str(self.fun_fitness(self.get_best_ind())))
+        print(str(self))
+        print("Mejor individuo encontrado :")
+        print("Funcion fitness : "+str(self.fun_fitness(self.get_best_ind())))
         print(str(self.get_best_ind().generar_tablero()))
         
 
-    #ELIMINAR 
-
-    
-
-
-
-    def elitismo(self):
-        pop = self.__actual_pop 
-        self.mostrar_global_fitness(pop)
-        print("####################")
-        self.mostrar_global_fitness(self.get_first_best(pop))
-
-
-    def mostrar_global_fitness(self, pop): 
-        for sol in pop: 
-            print(str(sol.cromosoma) + " fitness :"+str(self.fun_fitness(sol)))
-
-
-    def mostrar_ruleta(self): 
-        self.mostrar_global_fitness(self.__actual_pop)
-        print("#########")
-        winners = self.selection_by_roulette(self.__actual_pop)
-        for sol in winners: 
-            print(sol.cromosoma)
-
-        child_1, child_2 = self.crossover_2_points(winners[0],winners[1])
-        print("#########")
-        print(str(child_1.cromosoma))
-        print(str(child_2.cromosoma))
-
-
-    def mostrar_torneo(self): 
-        self.mostrar_sols()
-        print("#####")
-        tour,win = self.selection_tournament()
-        
-        for x in tour : 
-            print(str(x[0].cromosoma) + " fitnes: "+str(self.fun_fitness(x[0]))+" VS " + str(x[1].cromosoma)+" fitnes: "+str(self.fun_fitness(x[1])))
-
-        print("#####")
-        print("WINNERS")
-        for w in win: 
-            print(str(w.cromosoma))
-
-    #ELIMINAR
-    def mostrar_fitness(self):
-        init_pop = self.get_initial_pop()
-        for x in init_pop:
-            print(self.fun_fitness(x))
-
-    #ELIMINAR 
-    def mostrar_sols(self): 
-        #init_pop = self.get_initial_pop()
-        for x in self.__actual_pop: 
-            print(x.cromosoma)
-
-
-'''
-Funcion auxiliar para regresar el porcentaje de un numero 
-'''
-def percentage(part, whole):
-  percentage = 100 * float(part)/float(whole)
-  return percentage
-
-
 def ejecucion(): 
 
-    #sol_1 = Solucion(8)
-    #print(sol_1)
-    #print(sol_1)
-    #sol_1.genes_randomization()
-    #print(sol_1)
-    #print(sol_1.generar_tablero())
-    #def __init__(self, num_reinas, num_ind, max_gen, porc_new_ind, porc_mut):
-    genetic = AG(10,50,250,0.70,0.1)
-    genetic.AG_execution()
-    #so_1 = Solucion(10)
-    #so_1.set_cromosoma([4,0,7,9,6,3,1,8,5,2])
-    #print(str(so_1.generar_tablero()))
-    #print(genetic.fun_fitness(so_1))
-    #genetic.elitismo()
-    #genetic.mostrar_sols()
-    #genetic.selection_tournament()
-    #genetic.mostrar_ruleta()
-    #print(percentage(5,50))
-    #genetic.mostrar_torneo()
-    #genetic.mostrar_fitness()
+    
+    genetic_1 = AG(10,50,350,0.40,0.1)
+    #genetic_1.AG_execution()
+
+    genetic_2 = AG(10,50,250,0.60,0.1)
+    #genetic_2.AG_execution()
+
+    genetic_3 = AG(8,50,250,0.60,0.1)
+    #genetic_3.AG_execution()
+
+    genetic_4 = AG(25,50,250,0.75,0.1)
+    #genetic_4.AG_execution()
+
+    genetic_5 = AG(12,80,400,0.75,0.2)
+    genetic_5.AG_execution()
 
 if __name__ == '__main__': 
     ejecucion()
